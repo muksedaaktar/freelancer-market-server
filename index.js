@@ -29,7 +29,15 @@ async function run() {
         const jobsCollection = db.collection('jobs');
 
         app.get('/jobs',async(req,res) =>{
-            const cursor = jobsCollection.find();
+
+            console.log(req.query)
+            const email = req.query.email
+            const query = {}
+            if(email){
+                query.userEmail = email;
+            }
+
+            const cursor = jobsCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -40,6 +48,8 @@ async function run() {
             const result = await jobsCollection.findOne(query);
             res.send(result);
         })
+
+      
 
         app.post('/jobs' , async(req,res) =>{
             const newJob = req.body;
@@ -52,12 +62,15 @@ async function run() {
             const updatedJob = req.body;
             const query = { _id: new ObjectId(id)}
             const update = {
-                $set: {
-                    name:updatedJob.name,
-                    category:updatedJob.category
+                 $set: updatedJob
+               // {
+                //     title:updatedJob.title,
+                //     category:updatedJob.category,
+                //     summary:updatedJob.summary,
+                //     coverImage:updatedJob.coverImage
 
-                }
-            }
+                // }
+            };
             const result = await jobsCollection.updateOne(query,update);
             res.send(result);
         })
