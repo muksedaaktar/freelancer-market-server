@@ -27,6 +27,16 @@ async function run() {
 
         const db = client.db('market_db');
         const jobsCollection = db.collection('jobs');
+        const userscCollection = db.collection('users');
+
+        app.post('/users',async(req,res) =>{
+            const newUser = req.body;
+            const result = await userscCollection.insertOne(newUser);
+            res.send(result);
+        })
+
+
+
 
         app.get('/jobs',async(req,res) =>{
 
