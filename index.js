@@ -10,40 +10,57 @@ app.use(express.json());
 const uri = "mongodb+srv://marketdbUser:31yD5GtZJfxB7mjk@contesthubcluster.tjeey7t.mongodb.net/?appName=ContestHubCluster";
 
 const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
 });
 
-app.get('/',(req,res) => {
+app.get('/', (req, res) => {
     res.send('Market Server is running');
 })
 
 async function run() {
-    try{
+    try {
         await client.connect();
 
         const db = client.db('market_db');
         const jobsCollection = db.collection('jobs');
         const userscCollection = db.collection('users');
 
-        app.post('/users',async(req,res) =>{
+        app.post('/users', async (req, res) => {
             const newUser = req.body;
-            const result = await userscCollection.insertOne(newUser);
+
+            const email = req.body.email;
+            const query = { email: email };
+            const existingUser = await userscCollection.findOne(query);
+            if (existingUser) {
+                res.send({ message: 'User alredy exist.' })
+            }
+            else {
+                const result = await userscCollection.insertOne(newUser);
+                res.send(result);
+            }
+
+
+
+        })
+
+
+        app.get('/latest-jobs',async(req,res) => {
+            const cursor = jobsCollection.find().sort({createdAt : -1}).limit(6);
+            const result = await cursor.toArray();
             res.send(result);
         })
 
 
-
-
-        app.get('/jobs',async(req,res) =>{
+        app.get('/jobs', async (req, res) => {
 
             console.log(req.query)
             const email = req.query.email
             const query = {}
-            if(email){
+            if (email) {
                 query.userEmail = email;
             }
 
@@ -52,28 +69,34 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/jobs/:id',async(req,res) =>{
+        app.get('/jobs/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await jobsCollection.findOne(query);
             res.send(result);
         })
 
-      
 
-        app.post('/jobs' , async(req,res) =>{
-            const newJob = req.body;
+
+        app.post('/jobs', async (req, res) => {
+
+            const newJob = {
+                ...req.body,
+                createdAt: new Date()
+            };
+
             const result = await jobsCollection.insertOne(newJob);
+
             res.send(result);
         })
 
-        app.patch('/jobs/:id',async(req,res) =>{
+        app.patch('/jobs/:id', async (req, res) => {
             const id = req.params.id;
             const updatedJob = req.body;
-            const query = { _id: new ObjectId(id)}
+            const query = { _id: new ObjectId(id) }
             const update = {
-                 $set: updatedJob
-               // {
+                $set: updatedJob
+                // {
                 //     title:updatedJob.title,
                 //     category:updatedJob.category,
                 //     summary:updatedJob.summary,
@@ -81,13 +104,13 @@ async function run() {
 
                 // }
             };
-            const result = await jobsCollection.updateOne(query,update);
+            const result = await jobsCollection.updateOne(query, update);
             res.send(result);
         })
 
-        app.delete('/jobs/:id',async(req,res) =>{
+        app.delete('/jobs/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await jobsCollection.deleteOne(query);
             res.send(result);
         })
@@ -99,13 +122,13 @@ async function run() {
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     }
-    finally{
+    finally {
 
     }
 
 }
 run().catch(console.dir)
 
-app.listen(port, ()=> {
+app.listen(port, () => {
     console.log(`Market server is running on port:${port}`)
 })
