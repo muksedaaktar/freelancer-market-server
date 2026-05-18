@@ -201,4 +201,4 @@ run().catch(console.dir)
 // app.listen(port, () => {
 //     console.log(`Market server is running on port:${port}`)
 // })
-export default app;
+module.exports = app;
